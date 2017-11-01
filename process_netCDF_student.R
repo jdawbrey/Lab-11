@@ -1,17 +1,17 @@
 library(ncdf4)
 library(reshape2)
-ncname <- "A2017286.L3m_DAY_CHL_chlor_a_4km"
-ncfname <- paste(ncname, ".nc", sep = "")
-dname <- "tmp"  # note: tmp means temperature (not temporary)
+#ncname <- "A2017286.L3m_DAY_CHL_chlor_a_4km"
+#ncfname <- paste(ncname, ".nc", sep = "")
+#dname <- "tmp"  # note: tmp means temperature (not temporary)
 
 # open a NetCDF file
-ncin <- nc_open(ncfname)
-print(ncin)
+#ncin <- nc_open(ncfname)
+#print(ncin)
 #set study area
-lonmax <- 180 #top northern most coordinate
-lonmin <- -180 #bott0m southern coordinate
-latmax <-  90 #left eastern coordinate
-latmin <-  -90 #right western coordinate
+lonmax <- -80 #top northern most coordinate
+lonmin <- -100 #bott0m southern coordinate
+latmax <-  31 #left eastern coordinate
+latmin <-  18 #right western coordinate
 
 # identify the variable you want to extract data for
 var <- "chlor_a"
@@ -48,13 +48,16 @@ d <- plyr::adply(f, 1, function(file) {
   dateini<-ncatt_get(data,0,"time_coverage_start")$value
   dateend<-ncatt_get(data,0,"time_coverage_end")$value
   datemean<-mean(c(as.Date(dateend,"%Y-%m-%dT%H:%M:%OSZ"),as.Date(dateini,"%Y-%m-%dT%H:%M:%OSZ")))
-  year <-  datemean$(1,2,3,4) # get the year
-  month <- %m # get the month
-  day - %d # get the day
+  year <-  format(as.Date(datemean, format="%Y-%m-%dT%H:%M:%OSZ"), "%Y") # get the year
+  month <- format(as.Date(datemean, format="%Y-%m-%dT%H:%M:%OSZ"), "%m") # get the month
+  day <- format(as.Date(datemean, format="%Y-%m-%dT%H:%M:%OSZ"), "%d") # get the day
 
    # prepare final data set. Include the day (it is missing in the code below)
-  dat.varSA<-data.frame(rep(as.integer(year,nrow(dat.varSAtmp))),rep(as.integer(month,nrow(dat.varSAtmp))),rep(as.integer(day,nrow(dat.varSAtmp))), rep(dunits,nrow(dat.varSAtmp)), rep(var, nrow(dat.varSAtmp)))
-  names(dat.varSA)<-c("year","month","day","lon","value","unit","var")
+  dat.varSA<-data.frame(rep(as.integer(year,nrow(dat.varSAtmp))),rep(as.integer(month,nrow(dat.varSAtmp))),
+                        rep(as.integer(day,nrow(dat.varSAtmp))), dat.varSAtmp$lon, dat.varSAtmp$lat,
+                        dat.varSAtmp$value, rep(dunits,nrow(dat.varSAtmp)), 
+                        rep(var, nrow(dat.varSAtmp)))
+  names(dat.varSA)<-c("year","month","day","lon","lat","value","unit","var")
 
   # close connection
   nc_close(data)
@@ -65,5 +68,18 @@ d <- plyr::adply(f, 1, function(file) {
 
 d <- d[,-1]
 
+
+
 # save csv file
-write.table(d, "Chlor_a.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+csvfile <- "Chlor_a.csv"
+write.table(na.omit(d), csvfile, row.names = FALSE, sep = ",")
+
+mean <- mean(Chlor_a$value)
+variance <- var(Chlor_a$value)
+stdev <- sd(Chlor_a$value)
+
+s <- data.frame(mean, stdev,variance)
+
+csvfile <- "Chlor_aSumStat.csv"
+write.table(na.omit(s), csvfile, row.names = FALSE, sep = ",")
+
